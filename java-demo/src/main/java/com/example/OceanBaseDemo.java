@@ -21,6 +21,10 @@ import org.slf4j.LoggerFactory;
 /**
  * OceanBase 数据库操作示例
  * 功能：创建表、插入数据、导出数据、导入数据
+ *
+ * 支持两种方式：
+ * 1. 使用 JDBC 直接操作数据库（本类实现）
+ * 2. 调用 ob-loader-dumper 工具（见 ObLoaderDumperInvoker 类）
  */
 public class OceanBaseDemo {
 
@@ -29,6 +33,22 @@ public class OceanBaseDemo {
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 
     public static void main(String[] args) {
+        // 检查参数，决定使用哪种方式
+        boolean useTool = args.length > 0 && "--use-tool".equals(args[0]);
+
+        if (useTool) {
+            // 使用 ob-loader-dumper 工具方式
+            runWithObLoaderDumper();
+        } else {
+            // 使用 JDBC 直接操作方式
+            runWithJdbc();
+        }
+    }
+
+    /**
+     * 使用 JDBC 方式执行
+     */
+    private static void runWithJdbc() {
         OceanBaseDemo demo = new OceanBaseDemo();
         try {
             // 1. 在源数据库创建表并插入数据
@@ -63,7 +83,75 @@ public class OceanBaseDemo {
                     DbConfig.buildUserWithTenant(DbConfig.TARGET_USER, DbConfig.TARGET_TENANT),
                     DbConfig.TARGET_PASSWORD, DbConfig.TARGET_DATABASE);
 
-            logger.info("========== 所有步骤完成 ==========");
+            logger.info("========== 所有步骤完成（JDBC 方式）==========");
+        } catch (Exception e) {
+            logger.error("执行失败", e);
+            System.exit(1);
+        }
+    }
+
+    /**
+     * 使用 ob-loader-dumper 工具方式执行
+     */
+    private static void runWithObLoaderDumper() {
+        logger.info("========== 使用 ob-loader-dumper 工具方式 ==========");
+
+        ObLoaderDumperInvoker invoker = new ObLoaderDumperInvoker();
+
+        // 检查工具是否可用
+        if (!invoker.checkToolAvailable()) {
+            logger.error("ob-loader-dumper 工具不可用，请检查路径：{}", ObLoaderDumperInvoker.TOOL_HOME);
+            System.exit(1);
+        }
+        logger.info("ob-loader-dumper 工具检查通过");
+
+        OceanBaseDemo demo = new OceanBaseDemo();
+        try {
+            // 1. 在源数据库创建表并插入数据（使用 JDBC）
+            logger.info("========== 步骤 1: 在源数据库创建表并插入数据 ==========");
+            demo.createTableAndInsertData(DbConfig.SOURCE_HOST, DbConfig.SOURCE_PORT,
+                    DbConfig.buildUserWithTenant(DbConfig.SOURCE_USER, DbConfig.SOURCE_TENANT),
+                    DbConfig.SOURCE_PASSWORD, DbConfig.SOURCE_DATABASE);
+
+            // 2. 使用 obdumper 导出数据
+            logger.info("========== 步骤 2: 使用 obdumper 导出数据 ==========");
+            boolean exportSuccess = invoker.exportData(
+                    DbConfig.SOURCE_HOST, DbConfig.SOURCE_PORT,
+                    DbConfig.SOURCE_USER, DbConfig.SOURCE_TENANT,
+                    DbConfig.SOURCE_PASSWORD, DbConfig.SOURCE_DATABASE,
+                    "test01", DbConfig.DATA_OUTPUT_DIR, "csv");
+
+            if (!exportSuccess) {
+                logger.error("导出数据失败");
+                System.exit(1);
+            }
+
+            // 3. 在目标数据库创建表（使用 JDBC）
+            logger.info("========== 步骤 3: 在目标数据库创建表 ==========");
+            demo.createTable(DbConfig.TARGET_HOST, DbConfig.TARGET_PORT,
+                    DbConfig.buildUserWithTenant(DbConfig.TARGET_USER, DbConfig.TARGET_TENANT),
+                    DbConfig.TARGET_PASSWORD, DbConfig.TARGET_DATABASE);
+
+            // 4. 使用 obloader 导入数据
+            logger.info("========== 步骤 4: 使用 obloader 导入数据 ==========");
+            boolean importSuccess = invoker.importData(
+                    DbConfig.TARGET_HOST, DbConfig.TARGET_PORT,
+                    DbConfig.TARGET_USER, DbConfig.TARGET_TENANT,
+                    DbConfig.TARGET_PASSWORD, DbConfig.TARGET_DATABASE,
+                    "test01", DbConfig.DATA_OUTPUT_DIR, "csv");
+
+            if (!importSuccess) {
+                logger.error("导入数据失败");
+                System.exit(1);
+            }
+
+            // 5. 验证数据
+            logger.info("========== 步骤 5: 验证目标数据库数据 ==========");
+            demo.verifyData(DbConfig.TARGET_HOST, DbConfig.TARGET_PORT,
+                    DbConfig.buildUserWithTenant(DbConfig.TARGET_USER, DbConfig.TARGET_TENANT),
+                    DbConfig.TARGET_PASSWORD, DbConfig.TARGET_DATABASE);
+
+            logger.info("========== 所有步骤完成（ob-loader-dumper 工具方式）==========");
         } catch (Exception e) {
             logger.error("执行失败", e);
             System.exit(1);
