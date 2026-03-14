@@ -240,10 +240,22 @@ test01 表包含 10 个字段，涵盖字符、数值、日期类型：
 
 ```
 java-demo/
-├── pom.xml
+├── pom.xml                                          # Maven 配置文件
+├── dependency-reduced-pom.xml                       # maven-shade-plugin 生成
+├── target/                                          # 编译输出目录
+│   ├── oceanbase-demo-1.0.0.jar                    # 普通 jar 包
+│   └── oceanbase-demo-1.0.0-jar-with-dependencies.jar  # 可执行 fat jar
 └── src/main/java/com/example/
-    └── ObLoaderDumperInvoker.java  # 主程序
+    └── ObLoaderDumperInvoker.java                   # 主程序类
 ```
+
+### 文件说明
+
+| 文件 | 说明 |
+|------|------|
+| `pom.xml` | Maven 项目配置，定义依赖和构建插件 |
+| `ObLoaderDumperInvoker.java` | 主程序，包含 obdumper/obloader 调用和 JDBC 数据库操作 |
+| `oceanbase-demo-1.0.0-jar-with-dependencies.jar` | 包含所有依赖的可执行 jar 包 |
 
 ---
 
