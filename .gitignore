@@ -1,23 +1,39 @@
-# 忽略 ob-loader-dumper 工具目录（已有）
-ob-loader-dumper-4.2.5-RELEASE/
-
-# 忽略 zip 安装包
+# Java
+*.class
+*.jar
+*.war
+*.ear
+*.nar
 *.zip
+*.tar.gz
+*.rar
 
-# 忽略日志文件
+# Log file
 *.log
 logs/
 
-# 忽略输出目录中的临时文件
-data/output/logs/
-data/output/manifest/*
-!data/output/*.csv
+# BlueJ files
+*.ctxt
 
-# 忽略编译输出
+# Mobile Tools for Java (J2ME)
+.mtj.tmp/
+
+# virtual machine crash logs
+hs_err_pid*
+replay_pid*
+
+# Package Files #
 target/
-*.class
 
 # IDE 配置
 .idea/
 .vscode/
 *.iml
+
+# OceanBase loader-dumper 工具目录（已有）
+ob-loader-dumper-4.2.5-RELEASE/
+
+# 输出目录中的临时文件
+data/output/logs/
+data/output/manifest/*
+!data/output/*.csv
