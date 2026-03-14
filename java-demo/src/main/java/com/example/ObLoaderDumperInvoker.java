@@ -152,6 +152,28 @@ public class ObLoaderDumperInvoker {
         logger.info("开始使用 obdumper 导出数据...");
         logger.info("主机：{}:{}, 数据库：{}, 表：{}, 输出目录：{}", host, port, database, table, outputDir);
 
+        // 清理输出目录，避免旧文件干扰
+        try {
+            java.io.File dir = new java.io.File(outputDir);
+            if (dir.exists()) {
+                // 删除 data 子目录（obdumper 生成的目录）
+                java.io.File dataDir = new java.io.File(outputDir + "/data");
+                if (dataDir.exists()) {
+                    deleteDirectory(dataDir);
+                }
+                // 删除旧的 CSV 文件
+                java.io.File[] csvFiles = dir.listFiles((d, name) -> name.endsWith(".csv"));
+                if (csvFiles != null) {
+                    for (java.io.File csvFile : csvFiles) {
+                        csvFile.delete();
+                        logger.info("删除旧 CSV 文件：{}", csvFile.getName());
+                    }
+                }
+            }
+        } catch (Exception e) {
+            logger.warn("清理输出目录失败：{}", e.getMessage());
+        }
+
         List<String> command = buildBaseCommand(OBDUMPER_SCRIPT, host, port, user, tenant, password, database);
         command.add("--table");
         command.add(table);
@@ -171,6 +193,23 @@ public class ObLoaderDumperInvoker {
         command.add("--skip-check-dir");
 
         return executeCommand(command, "导出");
+    }
+
+    /**
+     * 递归删除目录
+     */
+    private void deleteDirectory(java.io.File dir) throws IOException {
+        if (dir.isDirectory()) {
+            java.io.File[] files = dir.listFiles();
+            if (files != null) {
+                for (java.io.File file : files) {
+                    deleteDirectory(file);
+                }
+            }
+            dir.delete();
+        } else {
+            dir.delete();
+        }
     }
 
     /**
@@ -245,8 +284,9 @@ public class ObLoaderDumperInvoker {
         command.add(host);
         command.add("-P");
         command.add(String.valueOf(port));
+        // OceanBase 用户名格式：user@tenant，但 obdumper/obloader 只需要 user 部分
         command.add("-u");
-        command.add(user + "@" + tenant);  // OceanBase 用户名格式：user@tenant
+        command.add(user);  // 只传用户名，不带@tenant
         command.add("-t");
         command.add(tenant);
         command.add("-p");
@@ -319,7 +359,8 @@ public class ObLoaderDumperInvoker {
      */
     private Connection getConnection(String host, int port, String user, String tenant,
                                      String password, String database) throws SQLException {
-        String url = String.format("jdbc:mysql://%s:%d/%s?useSSL=false&useUnicode=true&" +
+        // 使用 OceanBase 专用的 JDBC URL 格式
+        String url = String.format("jdbc:oceanbase://%s:%d/%s?useSSL=false&useUnicode=true&" +
                 "characterEncoding=utf8&allowMultiQueries=true&" +
                 "rewriteBatchedStatements=true&useServerPrepStmts=false",
                 host, port, database);
@@ -330,7 +371,25 @@ public class ObLoaderDumperInvoker {
         props.setProperty("useSSL", "false");
         props.setProperty("characterEncoding", "utf8");
 
-        return DriverManager.getConnection(url, props);
+        // 直接使用 OceanBase 驱动类创建连接
+        try {
+            Class<?> driverClass = Class.forName("com.oceanbase.jdbc.Driver");
+            java.sql.Driver driver = (java.sql.Driver) driverClass.getDeclaredConstructor().newInstance();
+            logger.info("OceanBase JDBC 驱动已加载：{}", driverClass.getName());
+            logger.info("正在连接数据库：{}", url);
+            Connection conn = driver.connect(url, props);
+            if (conn == null) {
+                throw new SQLException("驱动返回 null 连接，可能是 URL 或认证问题");
+            }
+            logger.info("数据库连接成功");
+            return conn;
+        } catch (ClassNotFoundException e) {
+            logger.error("加载 OceanBase JDBC 驱动失败", e);
+            throw new SQLException("加载 OceanBase JDBC 驱动失败", e);
+        } catch (Exception e) {
+            logger.error("创建数据库连接失败：{}", e.getMessage(), e);
+            throw new SQLException("创建数据库连接失败", e);
+        }
     }
 
     /**
