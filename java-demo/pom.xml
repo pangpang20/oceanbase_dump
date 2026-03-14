@@ -9,8 +9,8 @@
     <version>1.0.0</version>
     <packaging>jar</packaging>
 
-    <name>OceanBase Demo Application</name>
-    <description>OceanBase 数据库操作示例：创建表、插入数据、导出导入</description>
+    <name>OceanBase ob-loader-dumper Invoker</name>
+    <description>OceanBase 数据导出导入工具：调用 ob-loader-dumper 进行数据迁移</description>
 
     <properties>
         <maven.compiler.source>8</maven.compiler.source>
@@ -24,28 +24,6 @@
             <groupId>com.oceanbase</groupId>
             <artifactId>oceanbase-client</artifactId>
             <version>2.4.3</version>
-        </dependency>
-
-        <!-- 数据库连接池 -->
-        <dependency>
-            <groupId>com.alibaba</groupId>
-            <artifactId>druid</artifactId>
-            <version>1.2.18</version>
-        </dependency>
-
-        <!-- CSV 处理 -->
-        <dependency>
-            <groupId>com.opencsv</groupId>
-            <artifactId>opencsv</artifactId>
-            <version>5.7.1</version>
-        </dependency>
-
-        <!-- Lombok -->
-        <dependency>
-            <groupId>org.projectlombok</groupId>
-            <artifactId>lombok</artifactId>
-            <version>1.18.28</version>
-            <scope>provided</scope>
         </dependency>
 
         <!-- 日志 -->
@@ -70,7 +48,7 @@
                 <configuration>
                     <archive>
                         <manifest>
-                            <mainClass>com.example.OceanBaseDemo</mainClass>
+                            <mainClass>com.example.ObLoaderDumperInvoker</mainClass>
                         </manifest>
                     </archive>
                 </configuration>
@@ -82,7 +60,7 @@
                 <configuration>
                     <archive>
                         <manifest>
-                            <mainClass>com.example.OceanBaseDemo</mainClass>
+                            <mainClass>com.example.ObLoaderDumperInvoker</mainClass>
                         </manifest>
                     </archive>
                     <descriptorRefs>
