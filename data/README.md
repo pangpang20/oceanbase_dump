@@ -25,8 +25,10 @@
 | 密码 | Audaque@123 |
 
 ### 工具路径
+
 - **ob-loader-dumper**: `/opt/oceanbase/ob-loader-dumper-4.2.5-RELEASE`
 - **输出目录**: `/opt/oceanbase/data/output`
+- **下载地址**: [ob-loader-dumper-4.2.5-RELEASE.zip](https://obbusiness-private.oss-cn-shanghai.aliyuncs.com/download-center/opensource/ob_loader_dumper/4.2.5/ob-loader-dumper-4.2.5-RELEASE.zip)
 
 ---
 
