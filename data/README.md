@@ -263,19 +263,30 @@ java-demo/
 
 1. **obdumper/obloader 工具限制**：
    - 对 OceanBase 租户模式（user@tenant）支持有限
-   - 可能会将用户名中的 `@tenant` 部分去掉，导致认证失败
-   - 建议使用 `--no-sys` 参数跳过 sys 租户认证
+   - 用户名参数 `-u` 只需要用户名部分，不要包含 `@tenant`（例如：`-u audaque`，而不是 `-u audaque@test`）
+   - 租户信息通过 `-t` 参数单独指定
+   - 使用 `--no-sys` 参数跳过 sys 租户认证
 
-2. **LOAD DATA LOCAL INFILE**：
+2. **JDBC 连接配置**：
+   - Java 程序使用 `jdbc:oceanbase://` URL 格式（不是 `jdbc:mysql://`）
+   - 程序直接实例化 `com.oceanbase.jdbc.Driver` 类创建连接
+   - 用户名格式为 `user@tenant`（例如：`audaque@test`）
+
+3. **LOAD DATA LOCAL INFILE**：
    - 需要确保 MySQL 客户端和服务端都允许 `local_infile`
    - 检查命令：`SHOW GLOBAL VARIABLES LIKE 'local_infile';`
    - 设置命令：`SET GLOBAL local_infile = 1;`
 
-3. **字符集**：确保源数据库和目标数据库使用相同的字符集（推荐 utf8mb4）
+4. **字符集**：确保源数据库和目标数据库使用相同的字符集（推荐 utf8mb4）
 
-4. **时区**：TIMESTAMP 类型会受时区影响，确保两个数据库的时区设置一致
+5. **时区**：TIMESTAMP 类型会受时区影响，确保两个数据库的时区设置一致
 
-5. **JVM 要求**：Java 8 或更高版本
+6. **JVM 要求**：Java 8 或更高版本
+
+7. **Maven 打包**：
+   - 使用 `maven-shade-plugin` 打包可执行 jar
+   - 自动处理 `META-INF/services/java.sql.Driver` 服务注册文件
+   - 生成的 jar 文件：`target/oceanbase-demo-1.0.0-jar-with-dependencies.jar`
 
 ---
 
